@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Skillify & Agent Onboarding — 에이전트 실수를 구조적으로 없애는 법</title>
+<style>
+:root{
+  --bg:#080e1c;--sidebar:#0d1428;--panel:#111827;--panel2:#161f35;
+  --text:#e8edf8;--muted:#8892aa;--line:#1e2d4a;
+  --accent:#7c9cff;--green:#4de2c5;--warn:#ffb86b;--red:#ff7070;
+  --dasan:#f5c842;--r:16px;--max:900px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{display:flex;min-height:100vh;background:var(--bg);color:var(--text);font-family:Inter,-apple-system,"Noto Sans KR",sans-serif;font-size:16px;line-height:1.75}
+#sidebar{width:260px;min-width:260px;background:var(--sidebar);border-right:1px solid var(--line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;font-size:13px;}
+#sidebar-header{padding:20px 18px 14px;border-bottom:1px solid var(--line)}
+#sidebar-header h2{font-size:15px;color:#fff;letter-spacing:-.02em}
+#sidebar-header p{color:var(--muted);font-size:12px;margin-top:4px}
+#progress-bar{height:3px;background:var(--line);margin-top:10px;border-radius:99px;overflow:hidden}
+#progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));width:0%;transition:width .4s}
+nav{padding:10px 0 20px}
+.nav-group{padding:6px 18px 2px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+.nav-item{display:block;padding:8px 18px;color:var(--muted);text-decoration:none;border-left:2px solid transparent;transition:.15s;cursor:pointer}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.nav-item.active{color:#fff;border-left-color:var(--accent);background:rgba(124,156,255,.08)}
+#main{flex:1;overflow-y:auto;padding:0 0 80px}
+.chapter{max-width:var(--max);margin:0 auto;padding:48px 40px;display:none}
+.chapter.active{display:block}
+.dasan{background:linear-gradient(135deg,rgba(245,200,66,.1),rgba(245,200,66,.04));border:1px solid rgba(245,200,66,.3);border-radius:var(--r);padding:18px 20px;margin:24px 0;}
+.dasan .tag{font-size:12px;color:var(--dasan);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.dasan p{color:#fce9a0;font-size:15px;font-style:italic}
+h1{font-size:28px;letter-spacing:-.03em;color:#fff;margin-bottom:8px}
+h3{font-size:20px;letter-spacing:-.02em;margin:32px 0 10px;color:#fff}
+h4{font-size:16px;color:var(--accent);margin:20px 0 6px}
+p{color:#c8d2e8;margin:10px 0}
+ul,ol{padding-left:20px;color:#c8d2e8}
+li{margin:7px 0}
+b,strong{color:#fff}
+em{color:var(--warn)}
+code{background:rgba(124,156,255,.1);color:var(--accent);padding:2px 6px;border-radius:4px;font-size:14px}
+pre{background:#070d1a;border:1px solid var(--line);border-radius:14px;padding:18px;font-family:ui-monospace,monospace;font-size:13px;color:#d0e4ff;overflow-x:auto;white-space:pre;line-height:1.55;margin:16px 0}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+th{background:var(--panel2);padding:10px 14px;text-align:left;color:#c5d0ff;border:1px solid var(--line)}
+td{padding:10px 14px;border:1px solid var(--line);color:#c8d2e8;vertical-align:top}
+tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+.practice{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:22px;margin:24px 0}
+.practice .label{font-size:12px;color:var(--green);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.memo{margin:24px 0}
+.memo .label{font-size:12px;color:var(--dasan);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.memo textarea{width:100%;min-height:100px;background:#0a1022;border:1px solid rgba(245,200,66,.2);border-radius:14px;padding:14px;color:#fce9a0;font-size:14px;font-family:inherit;resize:vertical;outline:none;line-height:1.6}
+.memo textarea:focus{border-color:rgba(245,200,66,.5)}
+.review{background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin:28px 0}
+.review .label{font-size:12px;color:var(--accent);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.q{padding:10px 0;border-bottom:1px solid var(--line);color:#c5d0ff;font-size:14px}
+.q:last-child{border-bottom:none}
+.q::before{content:"Q. ";color:var(--accent);font-weight:700}
+.ch-nav{display:flex;justify-content:space-between;margin-top:40px;padding-top:24px;border-top:1px solid var(--line)}
+.ch-btn{padding:12px 20px;border-radius:99px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--text);cursor:pointer;font-size:14px;font-family:inherit;transition:.15s}
+.ch-btn:hover{background:rgba(124,156,255,.15);border-color:rgba(124,156,255,.3)}
+.tip{background:rgba(77,226,197,.06);border:1px solid rgba(77,226,197,.2);border-radius:var(--r);padding:14px 18px;margin:16px 0;font-size:14px;color:var(--green)}
+.warn{background:rgba(255,112,112,.06);border:1px solid rgba(255,112,112,.2);border-radius:var(--r);padding:14px 18px;margin:16px 0;font-size:14px;color:var(--red)}
+@media(max-width:900px){#sidebar{display:none}.chapter{padding:28px 20px}}
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h2>Skillify & Agent Onboarding</h2>
+    <p>다산 50법으로 배우기</p>
+    <div id="progress-bar"><div id="progress-fill"></div></div>
+  </div>
+  <nav id="nav-root">
+    <div class="nav-group">Part 1 — 왜 에이전트는 같은 실수를 반복하나</div>
+    <a class="nav-item" onclick="goto(0)">Ch.1 에이전트의 기억 문제</a>
+    <a class="nav-item" onclick="goto(1)">Ch.2 Latent vs Deterministic</a>
+    <a class="nav-item" onclick="goto(2)">Ch.3 Skillify — 실패를 구조로</a>
+    <div class="nav-group">Part 2 — 에이전트 온보딩</div>
+    <a class="nav-item" onclick="goto(3)">Ch.4 왜 온보딩이 필요한가</a>
+    <a class="nav-item" onclick="goto(4)">Ch.5 Agent Card — 이력서</a>
+    <a class="nav-item" onclick="goto(5)">Ch.6 권한 설계와 승격</a>
+    <a class="nav-item" onclick="goto(6)">Ch.7 플릿 레벨 검증</a>
+    <div class="nav-group">Part 3 — Skillify 10단계</div>
+    <a class="nav-item" onclick="goto(7)">Ch.8 SKILL.md + 결정론적 코드</a>
+    <a class="nav-item" onclick="goto(8)">Ch.9 테스트 3계층</a>
+    <a class="nav-item" onclick="goto(9)">Ch.10 Resolver와 라우팅</a>
+    <a class="nav-item" onclick="goto(10)">Ch.11 DRY 감사 + Smoke Test</a>
+    <div class="nav-group">부록</div>
+    <a class="nav-item" onclick="goto(11)">부록 A: 다산 50법 대응표</a>
+    <a class="nav-item" onclick="goto(12)">부록 B: 참고자료</a>
+  </nav>
+</div>
+
+<div id="main">
+
+<!-- ═══════════ Ch.0 ═══════════ -->
+<div class="chapter active" id="ch0">
+<h1>Chapter 1. 에이전트의 기억 문제</h1>
+
+<div class="dasan">
+<div class="tag">🏛️ 여박총피법 如剝蔥皮</div>
+<p>"양파를 한 겹씩 벗기듯, '왜?'를 한 단계 더 파고 들어간다."</p>
+</div>
+
+<h3>에이전트는 왜 같은 실수를 반복할까?</h3>
+<p>대부분의 AI 에이전트는 <b>세션 단위 기억</b>만 가진다. 대화가 끝나면 컨텍스트 창이 사라지고, 다음 세션의 에이전트는 이전 실수를 전혀 모른다.</p>
+
+<p>일반적인 "수정" 방식을 보자:</p>
+<ul>
+<li>프롬프트 미세 조정 — "Please don't hallucinate" 주문</li>
+<li>시스템 메시지 확대 — 점점 길어지는 지시문</li>
+<li>더 큰 모델 교체 — 비용만 올라가고 근본 구조는 동일</li>
+</ul>
+
+<p>Garry Tan은 이걸 <b>"vibes-based reliability"</b>라고 표현했다. <em>분위기로 신뢰성을 확보하려는 것</em>이다. 대화가 복잡해지는 순간 전부 무너진다.</p>
+
+<h3>왜 이게 필요한가? — 한 겹 더</h3>
+<p>$160M을 투자받은 LangChain도 테스트 도구(gym membership)는 줬지만 워크플로우(workout plan)는 빠뜨렸다. 무엇을 테스트할지, 어떤 순서로, 언제 끝인지 — 그 루프가 없었다. 개발자 대다수는 에이전트를 테스트하지 않는다. 프레임워크가 도구만 주고 방향을 안 줬기 때문이다.</p>
+
+<div class="practice">
+<div class="label">🔍 비교로 이해하기 (피차비대법)</div>
+<table>
+<tr><th></th><th>전통 소프트웨어</th><th>AI 에이전트 (현재)</th></tr>
+<tr><td><b>버그 발생</b></td><td>테스트 작성 → 영구 방지</td><td>프롬프트 수정 → 같은 버그 재발</td></tr>
+<tr><td><b>기억</b></td><td>코드베이스에 영구 저장</td><td>세션 끝나면 소멸</td></tr>
+<tr><td><b>품질 보증</b></td><td>CI/CD, 자동 테스트</td><td>"분위기"</td></tr>
+</table>
+</div>
+
+<h3>반대로 생각하면?</h3>
+<p>만약 소프트웨어 팀에서 버그가 나올 때마다 테스트를 안 쓰고 "다음엔 조심하자"만 한다면? 2005년에 이미 해결한 문제를 에이전트 세계에서는 아직 방치하고 있다.</p>
+
+<div class="memo">
+<div class="label">📝 내 생각 쓰기 (수사차록법)</div>
+<textarea placeholder="내가 운영하는 에이전트(또는 나 자신)가 반복하는 실수가 있나? 적어보자."></textarea>
+</div>
+
+<div class="review">
+<div class="label">🔁 다시 확인 (반복참정법)</div>
+<div class="q">"vibes-based reliability"란 구체적으로 어떤 관행들을 말하는가?</div>
+<div class="q">에이전트의 세션 단위 기억이 문제가 되는 이유를 한 문장으로 설명할 수 있는가?</div>
+<div class="q">전통 소프트웨어에서 이 문제를 해결한 핵심 메커니즘은 무엇인가?</div>
+</div>
+
+<div class="ch-nav">
+<span></span>
+<button class="ch-btn" onclick="goto(1)">다음 → Latent vs Deterministic</button>
+</div>
+</div>
+
+<!-- ═══════════ Ch.1 ═══════════ -->
+<div class="chapter" id="ch1">
+<h1>Chapter 2. Latent vs Deterministic</h1>
+
+<div class="dasan">
+<div class="tag">🏛️ 층체판석법 層遞判析</div>
+<p>"단계별로 차곡차곡 분해하라. 한 번에 결론 내리지 말 것."</p>
+</div>
+
+<h3>두 개의 공간</h3>
+<p>Garry Tan의 "thin harness, fat skills" 아키텍처에서 가장 핵심적인 구분:</p>
+
+<table>
+<tr><th></th><th>Latent Space</th><th>Deterministic Space</th></tr>
+<tr><td><b>뭐가 필요?</b></td><td>판단, 추론, 창의성</td><td>정밀성, 일관성, 속도</td></tr>
+<tr><td><b>누가 해야?</b></td><td>LLM</td><td>스크립트 (코드)</td></tr>
+<tr><td><b>예시</b></td><td>"이 이메일 분위기가 어때?"</td><td>UTC→KST 시간 변환</td></tr>
+<tr><td><b>실행 시간</b></td><td>수 초</td><td>수 밀리초</td></tr>
+<tr><td><b>오류 특성</b></td><td>때때로 틀림 (확률적)</td><td>같은 입력 = 항상 같은 출력</td></tr>
+</table>
+
+<h3>실제 실패 사례 1: calendar-recall</h3>
+<p>에이전트에게 "10년 전 싱가포르 출장 언제였어?"라고 물었다. 로컬에 3,146개 캘린더 파일이 이미 인덱싱돼 있었다. <code>grep</code>이면 1밀리초 이내.</p>
+<p>에이전트가 한 일:</p>
+<ol>
+<li>라이브 캘린더 API 호출 → 너무 오래된 데이터라 차단</li>
+<li>이메일 검색 → 노이즈 투성이</li>
+<li>API 파라미터 바꿔서 재시도 → 여전히 차단</li>
+<li><b>5분 후</b> 로컬 KB 검색 → 즉시 발견</li>
+</ol>
+<p class="warn">버그의 정체: 틀린 답이 아니라 <b>틀린 공간에서 작업한 것</b>. 결정론적 작업을 latent space에서 처리했다.</p>
+
+<h3>실제 실패 사례 2: "28분"</h3>
+<p>에이전트: "다음 미팅 28분 후입니다." → 실제: <b>88분 후</b>. UTC→PT 시간대 변환을 머릿속(latent)으로 해서 1시간 오차.</p>
+<p><code>context-now.mjs</code>라는 스크립트가 이미 존재했고, 50ms에 정확한 JSON을 반환한다. 에이전트가 안 썼을 뿐.</p>
+
+<pre>{
+  "now": "2026-04-21T07:38:12-07:00",
+  "upcomingEvents": [{
+    "summary": "App Ops Sprint Planning",
+    "minutesUntil": 88
+  }]
+}</pre>
+
+<h3>The Loop — 핵심 메커니즘</h3>
+<p><b>Latent space가 결정론적 도구를 빌드한다 → 결정론적 도구가 latent space를 제약한다.</b></p>
+<p>모델의 지능이 "모델이 멍청해지는 것을 막는 제약"을 직접 만든다. 에이전트가 <code>calendar-recall.mjs</code>를 작성하면, 이후 그 스킬은 에이전트에게 "라이브 API 대신 이 스크립트를 실행하라"고 강제한다. 구 실패 경로는 구조적으로 도달 불가능해진다.</p>
+
+<div class="memo">
+<div class="label">📝 내 생각 쓰기 (수사차록법)</div>
+<textarea placeholder="내 에이전트(또는 내 워크플로우)에서 latent space에서 하고 있지만 사실 스크립트로 해야 하는 작업이 있나?"></textarea>
+</div>
+
+<div class="review">
+<div class="label">🔁 다시 확인 (반복참정법)</div>
+<div class="q">Latent space와 Deterministic space의 구분 기준을 한 마디로 말할 수 있는가?</div>
+<div class="q">"28분" 실패에서 진짜 버그는 "정답이 틀린 것"이 아니라 무엇이었나?</div>
+<div class="q">"The Loop"에서 latent → deterministic → latent constraint 순서를 자기 말로 설명할 수 있는가?</div>
+</div>
+
+<div class="ch-nav">
+<button class="ch-btn" onclick="goto(0)">← 이전</button>
+<button class="ch-btn" onclick="goto(2)">다음 → Skillify</button>
+</div>
+</div>
+
+<!-- ═══════════ Ch.2 ═══════════ -->
+<div class="chapter" id="ch2">
+<h1>Chapter 3. Skillify — 실패를 영구 구조로 바꾸기</h1>
+
+<div class="dasan">
+<div class="tag">🏛️ 조례최중법 條例最重</div>
+<p>"규칙을 먼저 정한다. 기준 없이 시작하지 않는다."</p>
+</div>
+
+<h3>핵심 개념</h3>
+<p><b>Skillify</b> = 실패가 발생할 때마다 그것을 SKILL.md + 결정론적 코드 + 테스트로 변환하는 방법론. 10단계 체크리스트를 모두 통과해야 "skill"이다. 그렇지 않으면 "오늘만 작동하는 코드".</p>
+
+<p>Garry Tan의 표현: <em>"Every failure becomes a skill. Every skill has evals. Every eval runs daily."</em></p>
+
+<h3>Skillify 10단계 체크리스트</h3>
+<table>
+<tr><th>#</th><th>단계</th><th>핵심</th></tr>
+<tr><td>1</td><td><b>SKILL.md</b></td><td>계약서 — 이름, 트리거, 규칙</td></tr>
+<tr><td>2</td><td><b>결정론적 코드</b></td><td>scripts/*.mjs — 코드가 할 수 있는 건 LLM 금지</td></tr>
+<tr><td>3</td><td><b>Unit Tests</b></td><td>순수 함수, 픽스처 데이터, vitest</td></tr>
+<tr><td>4</td><td><b>Integration Tests</b></td><td>실제 데이터/엔드포인트</td></tr>
+<tr><td>5</td><td><b>LLM Evals</b></td><td>LLM-as-judge, 프로세스까지 평가</td></tr>
+<tr><td>6</td><td><b>Resolver Trigger</b></td><td>AGENTS.md에 라우팅 진입점 등록</td></tr>
+<tr><td>7</td><td><b>Resolver Eval</b></td><td>트리거가 실제로 라우팅되는지 검증</td></tr>
+<tr><td>8</td><td><b>Check-resolvable + DRY</b></td><td>도달 불가 스킬, 중복 제거</td></tr>
+<tr><td>9</td><td><b>E2E Smoke Test</b></td><td>전체 파이프라인 end-to-end</td></tr>
+<tr><td>10</td><td><b>Brain Filing Rules</b></td><td>KB 저장 위치 규칙</td></tr>
+</table>
+
+<h3>왜 이게 필요한가?</h3>
+<p>테스트 없는 스킬 시스템의 실패 모드 3가지:</p>
+<ol>
+<li><b>중복 스킬</b> — 월요일에 <code>deploy-k8s</code>, 목요일에 <code>kubernetes-deploy</code>. 같은 트리거, 다른 스킬. 라우팅이 주사위가 됨.</li>
+<li><b>사일런트 부패</b> — 스킬이 잘 작동하다 6주 뒤 업스트림 API 변경. 쓰레기 값을 조용히 반환. 사람이 발견할 때까지 방치.</li>
+<li><b>고아 스킬</b> — 자율 생성된 스킬의 트리거가 너무 약해서 영원히 매칭 안 됨. 인덱스 토큰만 차지, 실행 0회.</li>
+</ol>
+
+<h3>Skillify가 "동사"가 되는 순간</h3>
+<p>실패 대응을 넘어서 <b>개발 방식 자체</b>가 된다:</p>
+<ol>
+<li>에이전트와 대화하며 문제를 해결</li>
+<li>작동하면 → <b>"skillify it!"</b></li>
+<li>에이전트가 SKILL.md + 코드 + 테스트 + resolver 자동 생성</li>
+<li>1시간의 시행착오가 영구 인프라가 됨</li>
+</ol>
+
+<div class="tip">💡 실제 사례: OAuth webhook 1시간 씨름 → "skillify it" 한 마디 → 다음에 webhook 필요할 때 스킬이 자동 로드</div>
+
+<div class="memo">
+<div class="label">📝 내 생각 쓰기 (수사차록법)</div>
+<textarea placeholder="내 에이전트 시스템에서 'skillify'할 수 있는 반복 패턴이 있나? 최근 실패 중에 구조적으로 고칠 수 있었던 건?"></textarea>
+</div>
+
+<div class="review">
+<div class="label">🔁 다시 확인 (반복참정법)</div>
+<div class="q">Skillify 10단계 중 3~5단계(테스트 계층)가 각각 잡는 버그 유형의 차이를 설명할 수 있는가?</div>
+<div class="q">"오늘만 작동하는 코드"와 "skill"의 차이는 무엇인가?</div>
+<div class="q">테스트 없는 스킬 시스템의 3가지 실패 모드를 기억하고 있는가?</div>
+</div>
+
+<div class="ch-nav">
+<button class="ch-btn" onclick="goto(1)">← 이전</button>
+<button class="ch-btn" onclick="goto(3)">다음 → 에이전트 온보딩</button>
+</div>
+</div>
+
+<!-- ═══════════ Ch.3 ═══════════ -->
+<div class="chapter" id="ch3">
+<h1>Chapter 4. 왜 에이전트 온보딩이 필요한가</h1>
+
+<div class="dasan">
+<div class="tag">🏛️ 축기견초법 築基堅礎</div>
+<p>"기초부터 단단히. 전제를 확인하지 않고 구현에 들어가지 않는다."</p>
+</div>
+
+<h3>핵심 개념</h3>
+<p>HBR(2026-03)의 핵심 주장: <em>"에이전트 도입은 기술 문제가 아니라 일을 관리하는 방식의 문제다."</em> 에이전트를 새로운 소프트웨어로 취급하면 실패한다. <b>신입 직원처럼 온보딩</b>해야 한다.</p>
+
+<p>WEF도 같은 결론: <em>"에이전트 온보딩은 신입 직원과 같은 수준의 엄격함으로 접근해야 한다."</em></p>
+
+<h3>왜 이게 필요한가?</h3>
+<p>Microsoft는 e커머스 어시스턴트에서 26개 에이전트를 운영했다. 에이전트가 늘어날수록:</p>
+<ul>
+<li>역할이 겹치는 에이전트끼리 충돌</li>
+<li>비슷한 이름/설명으로 오케스트레이터가 잘못된 에이전트 선택</li>
+<li>사용자 신뢰 하락</li>
+</ul>
+<p>온보딩 프로세스를 도입한 후: 2,370개 시나리오에서 <b>recall@5 98%, 최종 invoke 정확도 95%</b></p>
+
+<h3>비교: 온보딩 있는 조직 vs 없는 조직</h3>
+<table>
+<tr><th></th><th>온보딩 없음</th><th>구조적 온보딩</th></tr>
+<tr><td><b>역할 정의</b></td><td>"알아서 해"</td><td>Job description + 경계</td></tr>
+<tr><td><b>권한</b></td><td>전부 열림</td><td>최소 권한 → 증명 후 확장</td></tr>
+<tr><td><b>평가</b></td><td>"잘 되는 것 같아"</td><td>정기 평가 + 메트릭</td></tr>
+<tr><td><b>책임</b></td><td>불분명</td><td>인간 감독자 지정</td></tr>
+<tr><td><b>실패 대응</b></td><td>프롬프트 수정</td><td>스킬 생성 + 테스트</td></tr>
+</table>
+
+<div class="memo">
+<div class="label">📝 내 생각 쓰기 (수사차록법)</div>
+<textarea placeholder="내가 운영하는 에이전트(들)에게 '온보딩'이라 부를 만한 과정이 있었나? 없었다면, 어떤 문제가 있었나?"></textarea>
+</div>
+
+<div class="review">
+<div class="label">🔁 다시 확인 (반복참정법)</div>
+<div class="q">HBR이 에이전트를 "소프트웨어가 아니라 직원"으로 취급해야 한다고 주장하는 핵심 근거는?</div>
+<div class="q">Microsoft가 온보딩 프로세스로 달성한 정량적 결과는?</div>
+<div class="q">에이전트 온보딩과 Skillify의 접점은 어디인가?</div>
+</div>
+
+<div class="ch-nav">
+<button class="ch-btn" onclick="goto(2)">← 이전</button>
+<button class="ch-btn" onclick="goto(4)">다음 → Agent Card</button>
+</div>
+</div>
+
+<!-- ═══════════ Ch.4 ═══════════ -->
+<div class="chapter" id="ch4">
+<h1>Chapter 5. Agent Card — 에이전트의 이력서</h1>
+
+<div class="dasan">
+<div class="tag">🏛️ 선정문목법 先定門目</div>
+<p>"목차와 구조를 먼저 세운다. 바로 쓰기 시작하지 않는다."</p>
+</div>
+
+<h3>핵심 개념</h3>
+<p>WEF는 <b>Agent Card</b> 개념을 제시했다 — 에이전트의 "이력서". 7개 차원으로 에이전트의 행동적·운영적 프로필을 정의한다:</p>
+
+<table>
+<tr><th>차원</th><th>질문</th><th>예시</th></tr>
+<tr><td><b>Function</b></td><td>이 에이전트는 무슨 일을 하는가?</td><td>캘린더 검색, 코드 리뷰</td></tr>
+<tr><td><b>Role</b></td><td>전문가인가, 범용인가?</td><td>특화 vs 제너럴리스트</td></tr>
+<tr><td><b>Predictability</b></td><td>결정론적인가, 비결정론적인가?</td><td>grep = 결정론, 요약 = 비결정론</td></tr>
+<tr><td><b>Autonomy</b></td><td>얼마나 독립적으로 판단하는가?</td><td>연구만 vs 실행+보고</td></tr>
+<tr><td><b>Authority</b></td><td>어떤 권한/접근이 허용되나?</td><td>읽기전용 vs 쓰기 가능</td></tr>
+<tr><td><b>Use case</b></td><td>어떤 도메인/워크플로우에 배치되나?</td><td>고객 지원, 개발 보조</td></tr>
+<tr><td><b>Environment</b></td><td>운영 환경이 단순한가 복잡한가?</td><td>단일 시스템 vs 멀티 플랫폼</td></tr>
+</table>
+
+<h3>핵심 구분: 자율성 ≠ 자동화</h3>
+<p>WEF의 중요한 관찰: <b>자율성(Autonomy)</b>은 "무엇을 할지 선택하는 유연성"이고, <b>자동화(Automation)</b>는 "정해진 것을 실행하는 신뢰성"이다. 이 둘은 시스템 고유 속성이 아니라 <b>설계 선택</b>이다.</p>
+
+<div class="tip">💡 로봇 청소기: 낮은 권한, 중간 자율성, 단순 환경. 개인 비서: 높은 권한, 높은 자율성, 복잡 환경 → 비서에게 훨씬 더 엄격한 감독 필요.</div>
+
+<h3>HBR의 Job Description</h3>
+<p>Agent Card를 더 실용적으로 확장하면 HBR의 에이전트 Job Description이 된다:</p>
+<ul>
+<li>이 에이전트의 <b>책임</b>은 무엇인가?</li>
+<li>이 에이전트의 <b>책임이 아닌 것</b>은 무엇인가?</li>
+<li><b>결정 경계</b>는 어디인가?</li>
+<li>어떤 <b>권한</b>을 가지는가?</li>
+<li>언제 <b>인간의 승인</b>을 구해야 하는가?</li>
+</ul>
+
+<div class="practice">
+<div class="label">🛠️ 실습 (정과실천법)</div>
+<p>아래 양식으로 내 에이전트 중 하나의 Agent Card를 작성해보자:</p>
+<textarea style="width:100%;min-height:200px;background:#0a1022;border:1px solid var(--line);border-radius:14px;padding:14px;color:var(--text);font-size:14px;font-family:ui-monospace,monospace;resize:vertical" placeholder="name: [에이전트 이름]
+function: [주요 기능]
+role: [전문가 / 범용]
+predictability: [결정론적 / 비결정론적 / 혼합]
+autonomy: [연구만 / 초안+추천 / 실행+보고 / 조용히 실행]
+authority: [읽기전용 / 쓰기 / 외부 API / 결제 등]
+use_case: [도메인]
+environment: [단순 / 복잡]
+supervisor: [담당 인간]
+not_responsible_for: [명시적 비책임 영역]
+approval_required: [이런 상황에서는 인간에게 물어야 함]"></textarea>
+</div>
+
+<div class="review">
+<div class="label">🔁 다시 확인 (반복참정법)</div>
+<div class="q">Agent Card의 7개 차원 중 "Predictability"는 Skillify의 어떤 개념과 직결되는가?</div>
+<div class="q">자율성과 자동화의 차이를 한 문장으로 설명할 수 있는가?</div>
+<div class="q">"책임이 아닌 것"을 명시하는 이유는 무엇인가?</div>
+</div>
+
+<div class="ch-nav">
+<button class="ch-btn" onclick="goto(3)">← 이전</button>
+<button class="ch-btn" onclick="goto(5)">다음 → 권한 설계와 승격</button>
+</div>
+</div>
+
+<!-- ═══════════ Ch.5 ═══════════ -->
+<div class="chapter" id="ch5">
+<h1>Chapter 6. 권한 설계와 단계적 승격</h1>
+
+<div class="dasan">
+<div class="tag">🏛️ 정과실천법 定課實踐</div>
+<p>"목표량을 먼저 정하고 그대로 실천한다."</p>
+</div>
+
+<h3>핵심 개념</h3>
+<p>Bill Eisenhauer(LinkedIn)의 핵심 주장: <b>"에이전트 유형을 먼저 분류하고, 그다음에 설정하라."</b> 모든 에이전트가 같은 권한으로 시작해서는 안 된다.</p>
+
+<h3>에이전트 권한 레벨</h3>
+<table>
+<tr><th>레벨</th><th>설명</th><th>예시</th></tr>
+<tr><td><b>Research only</b></td><td>조사만. 아무것도 변경 안 함</td><td>미팅 준비 에이전트</td></tr>
+<tr><td><b>Draft & Recommend</b></td><td>초안 작성 + 추천. 실행은 인간</td><td>콘텐츠 에이전트</td></tr>
+<tr><td><b>Recommend</b></td><td>판단하고 추천. 실행은 승인 후</td><td>고객 지원 라우터</td></tr>
+<tr><td><b>Act & Report</b></td><td>실행하고 보고</td><td>일정 관리 에이전트</td></tr>
+<tr><td><b>Act silently</b></td><td>보고 없이 자동 실행</td><td>로그 정리, 캐시 관리</td></tr>
+</table>
+
+<h3>HBR의 "인턴 원칙"</h3>
+<p><b>"인턴으로 고용, 증명하면 정규직."</b> 새 에이전트는 영구 워크플로우에 넣기 전에 성과를 입증해야 한다. 교육 시 주장이나 미래 약속이 아니라 <b>실제 결과</b>로만 판단한다.</p>
+
+<h3>승격 게이트 — 구체적 기준</h3>
+<table>
+<tr><th>에이전트 유형</th><th>승격 조건</th></tr>
+<tr><td>콘텐츠</td><td>연속 3개 게시물 수정 없이 채택</td></tr>
+<tr><td>고객 지원 라우터</td><td>50건 이상, 2주간 90%+ 분류 정확도</td></tr>
+<tr><td>일정 관리</td><td>2주간 충돌/누락 제로</td></tr>
+<tr><td>리서치</td><td>80%+ 신호 대 잡음 비율</td></tr>
+</table>
+
+<h3>감독자 시간 투자 곡선</h3>
+<table>
+<tr><th>시기</th><th>감독 수준</th></tr>
+<tr><td>Week 1</td><td>무거운 리뷰 (거의 전부 확인)</td></tr>
+<tr><td>Week 3~4</td><td>첫 승격</td></tr>
+<tr><td>Week 6~8</td><td>두 번째 승격</td></tr>
+<tr><td>Week 10~12</td><td>대시보드 + 예외 관리</td></tr>
+</table>
+<p>약 12주 동안 40시간 투자 → 주당 10~20시간 회수. 이것이 에이전트 온보딩의 ROI.</p>
+
+<div class="memo">
+<div class="label">📝 내 생각 쓰기 (수사차록법)</div>
+<textarea placeholder="내 에이전트의 현재 권한 수준은? 승격 기준이 명확한가? 없다면 어떤 기준을 세울 수 있을까?"></textarea>
+</div>
+
+<div class="review">
+<div class="label">🔁 다시 확인 (반복참정법)</div>
+<div class="q">"Classify Before You Configure"란 구체적으로 무엇을 의미하는가?</div>
+<div class="q">에이전트 승격의 기준이 "시간 경과"가 아니라 무엇이어야 하는가?</div>
+<div class="q">Act silently 레벨의 에이전트에서 주의할 실패 모드는?</div>
+</div>
+
+<div class="ch-nav">
+<button class="ch-btn" onclick="goto(4)">← 이전</button>
+<button class="ch-btn" onclick="goto(6)">다음 → 플릿 레벨 검증</button>
+</div>
+</div>
+
+<!-- ═══════════ Ch.6 ═══════════ -->
+<div class="chapter" id="ch6">
+<h1>Chapter 7. 플릿 레벨 검증</h1>
+
+<div class="dasan">
+<div class="tag">🏛️ 공심공안법 公心公眼</div>
+<p>"선입견을 배제하고, 내가 이미 알고 있다고 생각하는 것을 다시 의심하라."</p>
+</div>
+
+<h3>핵심 개념</h3>
+<p>Microsoft의 가장 중요한 발견: <b>새 에이전트 하나가 전체 플릿에 미치는 영향을 테스트해야 한다.</b> 개별 에이전트가 혼자 잘 작동해도, 기존 에이전트와 겹치면 전체 시스템이 무너진다.</p>
+
+<h3>Microsoft의 온보딩 시퀀스</h3>
+<ol>
+<li><b>유일성 체크</b> — 이름, 설명, 기능이 기존 에이전트와 겹치지 않는지</li>
+<li><b>Utterance 평가</b> — 샘플 발화가 기존 에이전트의 트리거와 충돌하지 않는지</li>
+<li><b>임시 시맨틱 캐시 통합</b> — 새 에이전트를 캐시에 추가하고 전체 테스트</li>
+<li><b>시스템 전체 응답 평가</b> — 기존 에이전트의 성능이 저하되지 않았는지</li>
+<li><b>골든 데이터셋 업데이트</b> — 새 테스트 케이스 추가</li>
+</ol>
+
+<h3>WEF의 멀티에이전트 생태계 리스크</h3>
+<table>
+<tr><th>리스크</th><th>설명</th></tr>
+<tr><td><b>Orchestration drift</b></td><td>공유 맥락 없이 에이전트를 연결하면 워크플로우가 취약해짐</td></tr>
+<tr><td><b>Semantic misalignment</b></td><td>두 에이전트가 같은 지시를 다르게 해석</td></tr>
+<tr><td><b>Security gaps</b></td><td>공유 신뢰 프레임워크 없이 데이터 노출</td></tr>
+<tr><td><b>Cascading effects</b></td><td>밀접하게 연결된 에이전트 장애가 전파</td></tr>
+<tr><td><b>Systemic complexity</b></td><td>에이전트 수 증가 → 예측 불가 행동 증가</td></tr>
+</table>
+
+<h3>Skillify Step 8과의 연결</h3>
+<p>Garry Tan의 <b>check-resolvable</b>은 정확히 이 문제를 해결한다. 40개 스킬 중 6개(15%)가 resolver에 등록되지 않은 "dark skill"이었다. 플릿 레벨에서 도달 가능성을 검증하지 않으면, 시스템 역량의 15%가 사라진다.</p>
+
+<div class="memo">
+<div class="label">📝 내 생각 쓰기 (수사차록법)</div>
+<textarea placeholder="내 에이전트 시스템에 '플릿 레벨' 검증이 있는가? 에이전트가 여러 개라면, 서로 겹치는 부분을 확인한 적 있나?"></textarea>
+</div>
+
+<div class="review">
+<div class="label">🔁 다시 확인 (반복참정법)</div>
+<div class="q">새 에이전트를 "혼자 테스트"하는 것이 왜 부족한가?</div>
+<div class="q">Orchestration drift와 Semantic misalignment의 차이를 설명할 수 있는가?</div>
+<div class="q">check-resolvable이 발견한 "15% dark skill"은 무엇을 의미하는가?</div>
+</div>
+
+<div class="ch-nav">
+<button class="ch-btn" onclick="goto(5)">← 이전</button>
+<button class="ch-btn" onclick="goto(7)">다음 → SKILL.md + 결정론적 코드</button>
+</div>
+</div>
+
+<!-- ═══════════ Ch.7 ═══════════ -->
+<div class="chapter" id="ch7">
+<h1>Chapter 8. SKILL.md + 결정론적 코드</h1>
+
+<div class="dasan">
+<div class="tag">🏛️ 본의본령법 本意本領</div>
+<p>"핵심을 건드려 전체를 움직여라. 부가 설명보다 핵심 먼저."</p>
+</div>
+
+<h3>Step 1: SKILL.md — 계약서</h3>
+<p>Skill은 <b>마크다운 절차서</b>다. 모델에게 "무엇을 하라"가 아니라 <b>"어떻게 접근하라"</b>를 가르친다. 메서드 호출처럼: 같은 절차, 입력에 따라 완전히 다른 출력.</p>
+
+<pre>name: calendar-recall
+description: "Brain-first historical calendar lookup.
+  ALWAYS use this before any live API for any event
+  not in the future or the last 48 hours."</pre>
+
+<p>안에 들어가는 하드 규칙:</p>
+<pre>Live calendar APIs are ONLY for events in the FUTURE
+or the LAST 48 HOURS.
+Everything historical goes through the local knowledge
+base first.</pre>
+
+<h3>Step 2: 결정론적 코드</h3>
+<p>스킬 파일이 에이전트에게 "이건 결정론적 작업이야"라고 알려주면, <b>에이전트 자체가 스크립트를 작성</b>한다.</p>
+
+<pre>$ node scripts/calendar-recall.mjs search "Singapore"
+
+Found 2 matching day(s):
+── 2016-05-07 ──
+  Flight to Singapore, Mandarin Oriental check-in
+── 2016-05-08 ──
+  Lunch with investors at Fullerton Hotel</pre>
+
+<p>실행 시간: 100ms 이하. LLM 호출 0. 네트워크 0. 순수 로컬 파일.</p>
+
+<div class="practice">
+<div class="label">🛠️ 실습 (정과실천법)</div>
+<p>내 에이전트가 반복적으로 하는 작업 중 하나를 골라 SKILL.md 초안을 써보자:</p>
+<textarea style="width:100%;min-height:180px;background:#0a1022;border:1px solid var(--line);border-radius:14px;padding:14px;color:var(--text);font-size:14px;font-family:ui-monospace,monospace;resize:vertical" placeholder="name: [스킬 이름]
+description: [언제 이 스킬을 사용하는지]
+
+## 규칙
+- [하드 규칙 1]
+- [하드 규칙 2]
+
+## 결정론적 부분
+- [코드로 해야 하는 것]
+
+## Latent 부분
+- [LLM 판단이 필요한 것]"></textarea>
+</div>
+
+<div class="review">
+<div class="label">🔁 다시 확인 (반복참정법)</div>
+<div class="q">SKILL.md가 "무엇을"이 아니라 "어떻게"를 가르친다는 것의 의미는?</div>
+<div class="q">결정론적 코드를 에이전트가 직접 작성하는 구조의 장점은?</div>
+<div class="q">calendar-recall의 "하드 규칙"이 차단하는 구체적 실패 경로는?</div>
+</div>
+
+<div class="ch-nav">
+<button class="ch-btn" onclick="goto(6)">← 이전</button>
+<button class="ch-btn" onclick="goto(8)">다음 → 테스트 3계층</button>
+</div>
+</div>
+
+<!-- ═══════════ Ch.8 ═══════════ -->
+<div class="chapter" id="ch8">
+<h1>Chapter 9. 테스트 3계층</h1>
+
+<div class="dasan">
+<div class="tag">🏛️ 무징불신법 無懲不信</div>
+<p>"확인하지 않은 것은 말하지 않는다. 검증 없이 신뢰하지 않는다."</p>
+</div>
+
+<h3>Step 3: Unit Tests</h3>
+<p>vitest로 순수 함수 테스트. 픽스처 데이터(합성 파일), known input → known output.</p>
+<p>잡는 버그: <code>parseEventLine</code>이 유니코드 문자가 포함된 장소를 조용히 드롭. <code>dateFromPath</code>가 윤년 날짜에서 null 반환. <code>formatJson</code>이 참석자 1명일 때 배열 생략.</p>
+<p><b>작지만 치명적.</b> 스크립트 출력이 틀리면 → 스킬이 틀린 답을 만들고 → 에이전트가 자신 있게 틀린 걸 말한다.</p>
+
+<h3>Step 4: Integration Tests</h3>
+<p>실제 데이터와 실제 엔드포인트를 때린다. 픽스처에서는 발견 못 하는 버그를 잡는다:</p>
+<ul>
+<li>실제 캘린더 파일의 Windows 줄바꿈</li>
+<li>자정을 넘기는 이벤트</li>
+<li>시간대 필드가 빠진 항목</li>
+<li>캐시가 오래되거나 없을 때의 동작</li>
+</ul>
+<p class="tip">💡 규칙: "스크립트가 실제 데이터에서 제대로 작동하는지 수동으로 확인하게 된다면, 그 확인 자체가 integration test여야 한다."</p>
+
+<h3>Step 5: LLM Evals</h3>
+<p>LLM-as-judge: 모델이 다른 모델의 출력을 루브릭으로 평가.</p>
+<p>context-now용 eval 예시 (35개 daily):</p>
+<ul>
+<li>"비행기 45분 후 출발하는데 SFO 도착할 수 있을까?" → 에이전트가 <code>context-now.mjs</code>를 실행했는지 체크. 머릿속 계산하면 <b>실패</b>.</li>
+<li>UTC 타임스탬프 변환 질문 → 스크립트 실행 후 결과 인용이 정답. 멘탈 계산은 <b>설사 정답이어도 실패</b>.</li>
+</ul>
+<p class="warn">핵심: 틀린 답만 잡는 게 아니라 <b>틀린 프로세스도 잡는다</b>. 이번에 우연히 맞아도 다음엔 틀린다.</p>
+
+<p>Garry의 eval 발견법: <em>"대화 기록에서 'fucking shit'이나 'wtf'를 검색하라. 그게 누락된 테스트 케이스다."</em></p>
+
+<div class="memo">
+<div class="label">📝 내 생각 쓰기 (수사차록법)</div>
+<textarea placeholder="내 에이전트 시스템에 테스트가 있는가? 3계층(unit/integration/LLM eval) 중 어디가 가장 약한가?"></textarea>
+</div>
+
+<div class="review">
+<div class="label">🔁 다시 확인 (반복참정법)</div>
+<div class="q">Unit test와 Integration test가 잡는 버그 유형의 근본적 차이는?</div>
+<div class="q">LLM eval이 "정답이어도 실패"로 판정하는 경우는 언제인가?</div>
+<div class="q">Garry의 eval 발견법("wtf 검색")이 시사하는 것은 무엇인가?</div>
+</div>
+
+<div class="ch-nav">
+<button class="ch-btn" onclick="goto(7)">← 이전</button>
+<button class="ch-btn" onclick="goto(9)">다음 → Resolver와 라우팅</button>
+</div>
+</div>
+
+<!-- ═══════════ Ch.9 ═══════════ -->
+<div class="chapter" id="ch9">
+<h1>Chapter 10. Resolver와 라우팅</h1>
+
+<div class="dasan">
+<div class="tag">🏛️ 휘분류취법 彙分類聚</div>
+<p>"모아서 나누고 분류하여 모아라. 산발된 정보를 체계화하라."</p>
+</div>
+
+<h3>Step 6: Resolver Trigger</h3>
+<p>Resolver = <b>맥락의 라우팅 테이블</b>. 작업 유형 X가 나타나면 스킬 Y를 로드한다. 각 스킬은 AGENTS.md에 트리거 엔트리가 있어야 한다.</p>
+<p>이 단계가 빠지면: 스킬이 존재하고, 역량이 존재하지만, <b>시스템이 접근할 수 없다</b>. 병원에 외과의가 있는데 디렉토리에 등록 안 된 것과 같다.</p>
+
+<h3>Step 7: Resolver Eval</h3>
+<p>트리거가 "이 문구는 이 스킬로 라우팅돼야 한다"고 선언한다. Resolver eval은 <b>실제로 그렇게 되는지</b> 테스트한다.</p>
+
+<pre>{ intent: 'what time is my meeting',   expectedSkill: 'context-now' }
+{ intent: 'find my 2016 trip',          expectedSkill: 'calendar-recall' }
+{ intent: 'who is Pedro Franceschi',    expectedSkill: 'brain-ops' }
+{ intent: 'save this article',          expectedSkill: 'idea-ingest' }</pre>
+
+<p>두 가지 실패 모드:</p>
+<ul>
+<li><b>False negative</b>: 스킬이 발동해야 하는데 안 함 → 트리거 설명이 잘못됨</li>
+<li><b>False positive</b>: 잘못된 스킬이 발동 → 두 트리거가 겹침</li>
+</ul>
+
+<p>"내 캘린더 내일 뭐 있어?" — <code>calendar-check</code>, <code>calendar-recall</code>, <code>google-calendar</code> 세 스킬 중 어디로? 세 개가 다른 시간 도메인을 담당하는데, 이 문구는 세 개 다 매칭 가능. Resolver eval이 이 모호성을 <b>사용자가 맞닥뜨리기 전에</b> 잡는다.</p>
+
+<div class="practice">
+<div class="label">🛠️ 실습 (정과실천법)</div>
+<p>내 에이전트의 스킬 3개를 골라 resolver 매핑 테스트 케이스를 써보자:</p>
+<textarea style="width:100%;min-height:120px;background:#0a1022;border:1px solid var(--line);border-radius:14px;padding:14px;color:var(--text);font-size:14px;font-family:ui-monospace,monospace;resize:vertical" placeholder="{ intent: '...', expectedSkill: '...' }
+{ intent: '...', expectedSkill: '...' }
+{ intent: '...', expectedSkill: '...' }"></textarea>
+</div>
+
+<div class="review">
+<div class="label">🔁 다시 확인 (반복참정법)</div>
+<div class="q">Resolver trigger(Step 6)와 Resolver eval(Step 7)이 각각 잡는 문제가 다른데, 그 차이는?</div>
+<div class="q">False positive와 False negative 중 어떤 것이 더 위험하고 왜인가?</div>
+<div class="q">Resolver eval의 두 계층(구조적 테스트 + LLM 라우팅 테스트)이 모두 필요한 이유는?</div>
+</div>
+
+<div class="ch-nav">
+<button class="ch-btn" onclick="goto(8)">← 이전</button>
+<button class="ch-btn" onclick="goto(10)">다음 → DRY 감사 + Smoke Test</button>
+</div>
+</div>
+
+<!-- ═══════════ Ch.10 ═══════════ -->
+<div class="chapter" id="ch10">
+<h1>Chapter 11. DRY 감사 + E2E Smoke Test + Brain Filing</h1>
+
+<div class="dasan">
+<div class="tag">🏛️ 종핵파즐법 綜核爬櫛</div>
+<p>"종합하여 핵심을 찾고, 꼼꼼히 빗질하듯 정렬하라."</p>
+</div>
+
+<h3>Step 8: Check-resolvable + DRY Audit</h3>
+<p>check-resolvable이 확인하는 3가지:</p>
+<ol>
+<li>SKILL.md가 있는 모든 스킬 디렉토리 → resolver에 엔트리가 있는가</li>
+<li>스킬이 참조하는 모든 스크립트 → 실제로 호출 가능한가 (파일 존재, 올바른 export)</li>
+<li>두 스킬의 트리거 설명이 겹쳐서 라우팅 모호성을 만들지 않는가</li>
+</ol>
+
+<p>DRY audit 예시 — 캘린더 도메인 4개 스킬의 레인 분리:</p>
+<table>
+<tr><th>스킬</th><th>담당 시간 도메인</th><th>접근 방식</th></tr>
+<tr><td>calendar-recall</td><td>48시간 이전 과거</td><td>로컬 KB grep</td></tr>
+<tr><td>calendar-check</td><td>오늘~이번 주</td><td>라이브 API</td></tr>
+<tr><td>google-calendar</td><td>미래 이벤트 CRUD</td><td>Google API</td></tr>
+<tr><td>context-now</td><td>지금 이 순간</td><td>로컬 스크립트</td></tr>
+</table>
+<p>4개 스킬, 영역 겹침 없음, 각자 레인. 5번째 캘린더 스킬이 다른 레인을 침범하면 DRY audit가 배포 전 실패시킨다.</p>
+
+<h3>Step 9: E2E Smoke Test</h3>
+<p>전체 파이프라인을 end-to-end로 테스트. 모든 조각이 맞아도 연결이 안 되면 실패할 수 있기 때문이다.</p>
+<ul>
+<li>"싱가포르 언제 갔어?" → <code>calendar-recall.mjs</code> 실행 → 올바른 답 → 올바른 포맷?</li>
+<li>"다음 미팅 몇 시야?" → <code>context-now.mjs</code> 실행 → 멘탈 계산 안 했는지?</li>
+</ul>
+<p>스킬이 맞고, 스크립트가 맞고, resolver가 맞아도 — 에이전트가 전부 무시하고 "즉흥"할 수 있다. Smoke test가 그걸 잡는다.</p>
+
+<h3>Step 10: Brain Filing Rules</h3>
+<p>KB에 쓰는 스킬은 <b>어디에 저장할지</b> 규칙이 필요하다. 사람은 <code>people/</code>, 회사는 <code>companies/</code>, 정책은 <code>civic/</code>에.</p>
+<p>13개 brain-writing 스킬 중 10개가 잘못된 디렉토리에 저장하고 있었다. 각자 경로를 하드코딩했기 때문. filing rules 문서를 만들고 스킬이 저장 전에 참조하게 하니 <b>오분류 제로</b>.</p>
+
+<div class="memo">
+<div class="label">📝 내 생각 쓰기 (수사차록법)</div>
+<textarea placeholder="내 스킬/도구 시스템에 '레인 분리'가 되어 있나? 겹치는 스킬이 있다면 어떤 것들인가?"></textarea>
+</div>
+
+<div class="review">
+<div class="label">🔁 다시 확인 (반복참정법)</div>
+<div class="q">check-resolvable의 "dark skill" 문제를 한 문장으로 설명할 수 있는가?</div>
+<div class="q">E2E smoke test가 다른 테스트와 다른 점은 무엇인가?</div>
+<div class="q">Brain filing rules가 없을 때 발생하는 구체적 실패 모드는?</div>
+</div>
+
+<div class="ch-nav">
+<button class="ch-btn" onclick="goto(9)">← 이전</button>
+<button class="ch-btn" onclick="goto(11)">다음 → 부록 A</button>
+</div>
+</div>
+
+<!-- ═══════════ 부록 A ═══════════ -->
+<div class="chapter" id="ch11">
+<h1>부록 A: 다산 50법 × Skillify/Agent Onboarding 대응표</h1>
+
+<table>
+<tr><th>원칙</th><th>한자</th><th>이 교재에서의 적용</th></tr>
+<tr><td>여박총피법</td><td>如剝蔥皮</td><td>Ch.1 — 에이전트가 같은 실수를 반복하는 이유를 한 겹씩 파기</td></tr>
+<tr><td>층체판석법</td><td>層遞判析</td><td>Ch.2 — Latent vs Deterministic 단계별 분해</td></tr>
+<tr><td>조례최중법</td><td>條例最重</td><td>Ch.3 — Skillify 10단계 체크리스트 규칙 먼저 세우기</td></tr>
+<tr><td>축기견초법</td><td>築基堅礎</td><td>Ch.4 — 온보딩의 기초부터 다지기</td></tr>
+<tr><td>선정문목법</td><td>先定門目</td><td>Ch.5 — Agent Card 구조 먼저 설계</td></tr>
+<tr><td>정과실천법</td><td>定課實踐</td><td>Ch.6 — 승격 기준을 먼저 정하고 실천</td></tr>
+<tr><td>공심공안법</td><td>公心公眼</td><td>Ch.7 — 플릿 레벨에서 선입견 배제 검증</td></tr>
+<tr><td>본의본령법</td><td>本意本領</td><td>Ch.8 — SKILL.md의 핵심 먼저 접근</td></tr>
+<tr><td>무징불신법</td><td>無懲不信</td><td>Ch.9 — 검증 없이 신뢰하지 않는 3계층 테스트</td></tr>
+<tr><td>휘분류취법</td><td>彙分類聚</td><td>Ch.10 — Resolver로 스킬을 체계적으로 분류</td></tr>
+<tr><td>종핵파즐법</td><td>綜核爬櫛</td><td>Ch.11 — DRY 감사로 끝까지 정제</td></tr>
+<tr><td>피차비대법</td><td>彼此比對</td><td>전체 — 비교표로 개념 대조</td></tr>
+<tr><td>일반지도법</td><td>一反至道</td><td>전체 — "반대로 생각하면?" 섹션</td></tr>
+<tr><td>수사차록법</td><td>隨思箚錄</td><td>전체 — 매 챕터 textarea 메모</td></tr>
+<tr><td>반복참정법</td><td>反覆參訂</td><td>전체 — 매 챕터 확인 질문 3개</td></tr>
+<tr><td>거일반삼법</td><td>擧一反三</td><td>Ch.3 — 하나의 실패에서 전체 방법론 확장</td></tr>
+<tr><td>절시마탁법</td><td>切磋磨濯</td><td>Ch.9 — LLM eval이 틀린 프로세스를 단호히 잡음</td></tr>
+<tr><td>당구첩경법</td><td>當求捷徑</td><td>Ch.2 — Deterministic = 핵심 경로, Latent 우회 차단</td></tr>
+<tr><td>강구실용법</td><td>講究實用</td><td>전체 — 실제 코드와 실제 사례로만 구성</td></tr>
+<tr><td>실사구시법</td><td>實事求是</td><td>전체 — 사실 기반, 출처 명시</td></tr>
+</table>
+
+<div class="ch-nav">
+<button class="ch-btn" onclick="goto(10)">← 이전</button>
+<button class="ch-btn" onclick="goto(12)">다음 → 부록 B: 참고자료</button>
+</div>
+</div>
+
+<!-- ═══════════ 부록 B ═══════════ -->
+<div class="chapter" id="ch12">
+<h1>부록 B: 참고자료 & 학습 로드맵</h1>
+
+<h3>핵심 출처</h3>
+<table>
+<tr><th>출처</th><th>핵심 내용</th><th>링크</th></tr>
+<tr><td>Garry Tan — Skillify</td><td>실패→스킬 변환 10단계, Latent vs Deterministic, GBrain</td><td><a href="https://x.com/garrytan/status/2046876981711769720" style="color:var(--accent)">X Post</a></td></tr>
+<tr><td>Microsoft ISE</td><td>26개 에이전트 플릿 온보딩, 2-layer 라우팅, 98% recall</td><td><a href="https://devblogs.microsoft.com/ise/agent-onboarding-process-for-agentic-systems/" style="color:var(--accent)">DevBlog</a></td></tr>
+<tr><td>HBR</td><td>"에이전트를 직원처럼" — Job description, 인턴 원칙, 정기 평가</td><td><a href="https://hbr.org/2026/03/create-an-onboarding-plan-for-ai-agents" style="color:var(--accent)">HBR</a></td></tr>
+<tr><td>WEF / Capgemini</td><td>4 Pillars — Classification, Evaluation, Risk, Governance</td><td><a href="https://www.weforum.org/stories/2025/12/ai-agents-onboarding-governance/" style="color:var(--accent)">WEF</a></td></tr>
+<tr><td>Bill Eisenhauer</td><td>Classify Before Configure, 5단계 권한, 승격 게이트</td><td><a href="https://www.linkedin.com/pulse/what-agent-onboarding-actually-looks-like-practical-bill-eisenhauer-o9xpc" style="color:var(--accent)">LinkedIn</a></td></tr>
+<tr><td>OpenAI</td><td>에이전트 3요소(Model+Tools+Instructions), 오케스트레이션 패턴</td><td><a href="https://openai.com/business/guides-and-resources/a-practical-guide-to-building-ai-agents/" style="color:var(--accent)">OpenAI</a></td></tr>
+</table>
+
+<h3>도구 & 레포</h3>
+<table>
+<tr><th>도구</th><th>용도</th><th>링크</th></tr>
+<tr><td>GBrain</td><td>Skillify 패턴 내장 오픈소스 지식 엔진</td><td><a href="https://github.com/garrytan/gbrain" style="color:var(--accent)">GitHub</a></td></tr>
+<tr><td>GStack</td><td>Claude Code 생산성 도구</td><td><a href="https://github.com/garrytan/gstack" style="color:var(--accent)">GitHub</a></td></tr>
+<tr><td>OpenClaw</td><td>에이전트 오케스트레이션 CLI</td><td><a href="https://github.com/openclaw/openclaw" style="color:var(--accent)">GitHub</a></td></tr>
+<tr><td>awesome-claude-md</td><td>claude.md 온보딩 패턴 모음</td><td><a href="https://github.com/josix/awesome-claude-md" style="color:var(--accent)">GitHub</a></td></tr>
+</table>
+
+<h3>학습 로드맵</h3>
+<ol>
+<li><b>기초</b> — 이 교재 정독 + 각 챕터 실습/메모 완료</li>
+<li><b>실전 1단계</b> — 내 에이전트 하나에 Agent Card 작성, 첫 번째 SKILL.md 생성</li>
+<li><b>실전 2단계</b> — Skillify 10단계 체크리스트 1회 완주 (실패 하나를 skill로)</li>
+<li><b>확장</b> — GBrain SkillPack 설치 후 check-resolvable 실행</li>
+<li><b>운영</b> — daily eval + weekly DRY audit 자동화</li>
+</ol>
+
+<div class="ch-nav">
+<button class="ch-btn" onclick="goto(11)">← 이전</button>
+<span></span>
+</div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+const TOTAL=13;
+function goto(n){
+  document.querySelectorAll('.chapter').forEach(c=>c.classList.remove('active'));
+  const el=document.getElementById('ch'+n);
+  if(el)el.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach((a,i)=>a.classList.toggle('active',i===n));
+  document.getElementById('progress-fill').style.width=((n/Math.max(TOTAL-1,1))*100)+'%';
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.nav-item').forEach((a,i)=>{a.classList.toggle('active',i===0)});
+</script>
+</body>
+</html>
